@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RomanCloud - Online Roman Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(5px);
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+        }
+        
+        .btn-primary:hover {
+            background: #45a049;
+        }
+        
+        .main-container {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(0,0,0,0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .project-info {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .project-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .word-count {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .chapters-section {
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .add-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chapter-list {
+            list-style: none;
+        }
+        
+        .chapter-item {
+            padding: 12px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chapter-item:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateX(5px);
+        }
+        
+        .chapter-item.active {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .chapter-words {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        
+        .editor-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .chapter-title-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            outline: none;
+            padding: 10px 0;
+        }
+        
+        .editor-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .editor-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .text-editor {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.8;
+            font-family: 'Georgia', serif;
+            color: #333;
+            background: transparent;
+            resize: none;
+            min-height: 500px;
+        }
+        
+        .characters-list, .notes-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .character-item, .note-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .character-name {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .fullscreen-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .fullscreen-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(76, 175, 80, 0.4);
+        }
+        
+        .fullscreen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #1a1a1a;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .fullscreen-header {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .fullscreen-title {
+            color: white;
+            font-size: 18px;
+        }
+        
+        .close-fullscreen {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .fullscreen-editor {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        
+        .fullscreen-textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #e0e0e0;
+            font-size: 18px;
+            line-height: 2;
+            font-family: 'Georgia', serif;
+            resize: none;
+            min-height: calc(100vh - 160px);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 400px;
+            max-width: 90%;
+        }
+        
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .modal input, .modal textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .auto-save {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .auto-save.show {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 300px;
+            }
+            
+            .header {
+                padding: 10px 15px;
+            }
+            
+            .header-controls {
+                gap: 10px;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">📚 RomanCloud</div>
+        <div class="header-controls">
+            <button class="btn" onclick="exportProject()">📥 Export</button>
+            <button class="btn" onclick="saveProject()">💾 Speichern</button>
+            <button class="btn btn-primary" onclick="showProjectSettings()">⚙️ Projekt</button>
+        </div>
+    </div>
+    
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Project Info -->
+            <div class="project-info">
+                <div class="project-title" id="projectTitle">Mein Roman</div>
+                <div class="word-count">
+                    <div>📖 <span id="totalWords">0</span> Wörter</div>
+                    <div>📄 <span id="totalChapters">1</span> Kapitel</div>
+                </div>
+            </div>
+            
+            <!-- Chapters -->
+            <div class="chapters-section">
+                <div class="section-title">
+                    Kapitel
+                    <button class="add-btn" onclick="addChapter()">+</button>
+                </div>
+                <ul class="chapter-list" id="chapterList">
+                    <li class="chapter-item active" data-chapter="0" onclick="selectChapter(0)">
+                        <div>
+                            <div>Kapitel 1</div>
+                            <div class="chapter-words">0 Wörter</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Characters -->
+            <div class="chapters-section">
+                <div class="section-title">
+                    Charaktere
+                    <button class="add-btn" onclick="addCharacter()">+</button>
+                </div>
+                <div class="characters-list" id="charactersList">
+                    <div class="character-item">
+                        <div class="character-name">Hauptfigur</div>
+                        <div>Noch keine Beschreibung</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notes -->
+            <div class="chapters-section">
+                <div class="section-title">
+                    Notizen
+                    <button class="add-btn" onclick="addNote()">+</button>
+                </div>
+                <div class="notes-list" id="notesList">
+                    <div class="note-item">Erste Ideen für die Handlung...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Editor -->
+        <div class="editor-container">
+            <div class="editor-header">
+                <input type="text" class="chapter-title-input" id="chapterTitleInput" value="Kapitel 1" onchange="updateChapterTitle()">
+                <div class="editor-stats">
+                    <span>🔤 <span id="currentWords">0</span> Wörter</span>
+                    <span>📝 <span id="currentChars">0</span> Zeichen</span>
+                    <span>⏱️ Zuletzt gespeichert: <span id="lastSaved">nie</span></span>
+                </div>
+            </div>
+            <div class="editor-content">
+                <textarea class="text-editor" id="mainEditor" placeholder="Beginne hier mit deinem Roman...
+
+Es war einmal..."></textarea>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fullscreen Button -->
+    <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Vollbild-Modus">⛶</button>
+    
+    <!-- Fullscreen Mode -->
+    <div class="fullscreen-mode" id="fullscreenMode">
+        <div class="fullscreen-header">
+            <div class="fullscreen-title" id="fullscreenTitle">Kapitel 1</div>
+            <button class="close-fullscreen" onclick="toggleFullscreen()">✕ Schließen</button>
+        </div>
+        <div class="fullscreen-editor">
+            <textarea class="fullscreen-textarea" id="fullscreenEditor" placeholder="Fokussiert schreiben..."></textarea>
+        </div>
+    </div>
+    
+    <!-- Auto-save Indicator -->
+    <div class="auto-save" id="autoSave">💾 Automatisch gespeichert</div>
+    
+    <!-- Chapter Modal -->
+    <div id="chapterModal" class="modal">
+        <div class="modal-content">
+            <h3>Neues Kapitel</h3>
+            <input type="text" id="newChapterTitle" placeholder="Kapitel-Titel">
+            <div class="modal-buttons">
+                <button class="btn" onclick="closeModal('chapterModal')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="createChapter()">Erstellen</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Character Modal -->
+    <div id="characterModal" class="modal">
+        <div class="modal-content">
+            <h3>Neuer Charakter</h3>
+            <input type="text" id="newCharacterName" placeholder="Name">
+            <textarea id="newCharacterDesc" placeholder="Beschreibung" rows="3"></textarea>
+            <div class="modal-buttons">
+                <button class="btn" onclick="closeModal('characterModal')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="createCharacter()">Erstellen</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Note Modal -->
+    <div id="noteModal" class="modal">
+        <div class="modal-content">
+            <h3>Neue Notiz</h3>
+            <textarea id="newNoteContent" placeholder="Notiz-Inhalt" rows="4"></textarea>
+            <div class="modal-buttons">
+                <button class="btn" onclick="closeModal('noteModal')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="createNote()">Erstellen</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project Settings Modal -->
+    <div id="projectModal" class="modal">
+        <div class="modal-content">
+            <h3>Projekt-Einstellungen</h3>
+            <input type="text" id="projectTitleInput" placeholder="Projekt-Titel">
+            <div class="modal-buttons">
+                <button class="btn" onclick="closeModal('projectModal')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="updateProjectSettings()">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        let currentChapter = 0;
+        let chapters = [
+            { title: "Kapitel 1", content: "", words: 0 }
+        ];
+        let characters = [
+            { name: "Hauptfigur", description: "Noch keine Beschreibung" }
+        ];
+        let notes = ["Erste Ideen für die Handlung..."];
+        let projectTitle = "Mein Roman";
+        let autoSaveInterval;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProject();
+            setupAutoSave();
+            setupEventListeners();
+            updateStats();
+        });
+        
+        function setupEventListeners() {
+            const mainEditor = document.getElementById('mainEditor');
+            const fullscreenEditor = document.getElementById('fullscreenEditor');
+            
+            mainEditor.addEventListener('input', function() {
+                chapters[currentChapter].content = this.value;
+                updateWordCount();
+                showAutoSaveIndicator();
+            });
+            
+            fullscreenEditor.addEventListener('input', function() {
+                chapters[currentChapter].content = this.value;
+                document.getElementById('mainEditor').value = this.value;
+                updateWordCount();
+                showAutoSaveIndicator();
+            });
+        }
+        
+        function setupAutoSave() {
+            autoSaveInterval = setInterval(function() {
+                saveProject();
+            }, 30000); // Auto-save every 30 seconds
+        }
+        
+        function updateWordCount() {
+            const content = chapters[currentChapter].content;
+            const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+            const chars = content.length;
+            
+            chapters[currentChapter].words = words;
+            
+            document.getElementById('currentWords').textContent = words;
+            document.getElementById('currentChars').textContent = chars;
+            
+            updateTotalStats();
+            updateChapterList();
+        }
+        
+        function updateTotalStats() {
+            const totalWords = chapters.reduce((sum, chapter) => sum + chapter.words, 0);
+            document.getElementById('totalWords').textContent = totalWords;
+            document.getElementById('totalChapters').textContent = chapters.length;
+        }
+        
+        function updateChapterList() {
+            const chapterList = document.getElementById('chapterList');
+            chapterList.innerHTML = '';
+            
+            chapters.forEach((chapter, index) => {
+                const li = document.createElement('li');
+                li.className = `chapter-item ${index === currentChapter ? 'active' : ''}`;
+                li.setAttribute('data-chapter', index);
+                li.onclick = () => selectChapter(index);
+                li.innerHTML = `
+                    <div>
+                        <div>${chapter.title}</div>
+                        <div class="chapter-words">${chapter.words} Wörter</div>
+                    </div>
+                `;
+                chapterList.appendChild(li);
+            });
+        }
+        
+        function selectChapter(index) {
+            // Save current chapter content
+            chapters[currentChapter].content = document.getElementById('mainEditor').value;
+            
+            // Switch to new chapter
+            currentChapter = index;
+            const chapter = chapters[currentChapter];
+            
+            document.getElementById('mainEditor').value = chapter.content;
+            document.getElementById('chapterTitleInput').value = chapter.title;
+            document.getElementById('fullscreenEditor').value = chapter.content;
+            document.getElementById('fullscreenTitle').textContent = chapter.title;
+            
+            updateWordCount();
+            updateChapterList();
+        }
+        
+        function addChapter() {
+            showModal('chapterModal');
+            document.getElementById('newChapterTitle').value = `Kapitel ${chapters.length + 1}`;
+        }
+        
+        function createChapter() {
+            const title = document.getElementById('newChapterTitle').value || `Kapitel ${chapters.length + 1}`;
+            chapters.push({ title, content: "", words: 0 });
+            updateChapterList();
+            updateTotalStats();
+            closeModal('chapterModal');
+            selectChapter(chapters.length - 1);
+        }
+        
+        function updateChapterTitle() {
+            const newTitle = document.getElementById('chapterTitleInput').value;
+            chapters[currentChapter].title = newTitle;
+            document.getElementById('fullscreenTitle').textContent = newTitle;
+            updateChapterList();
+        }
+        
+        function addCharacter() {
+            showModal('characterModal');
+            document.getElementById('newCharacterName').value = '';
+            document.getElementById('newCharacterDesc').value = '';
+        }
+        
+        function createCharacter() {
+            const name = document.getElementById('newCharacterName').value;
+            const description = document.getElementById('newCharacterDesc').value;
+            
+            if (name) {
+                characters.push({ name, description: description || "Keine Beschreibung" });
+                updateCharactersList();
+                closeModal('characterModal');
+            }
+        }
+        
+        function updateCharactersList() {
+            const charactersList = document.getElementById('charactersList');
+            charactersList.innerHTML = '';
+            
+            characters.forEach(character => {
+                const div = document.createElement('div');
+                div.className = 'character-item';
+                div.innerHTML = `
+                    <div class="character-name">${character.name}</div>
+                    <div>${character.description}</div>
+                `;
+                charactersList.appendChild(div);
+            });
+        }
+        
+        function addNote() {
+            showModal('noteModal');
+            document.getElementById('newNoteContent').value = '';
+        }
+        
+        function createNote() {
+            const content = document.getElementById('newNoteContent').value;
+            if (content) {
+                notes.push(content);
+                updateNotesList();
+                closeModal('noteModal');
+            }
+        }
+        
+        function updateNotesList() {
+            const notesList = document.getElementById('notesList');
+            notesList.innerHTML = '';
+            
+            notes.forEach(note => {
+                const div = document.createElement('div');
+                div.className = 'note-item';
+                div.textContent = note.length > 50 ? note.substring(0, 50) + '...' : note;
+                notesList.appendChild(div);
+            });
+        }
+        
+        function toggleFullscreen() {
+            const fullscreenMode = document.getElementById('fullscreenMode');
+            const isVisible = fullscreenMode.style.display === 'flex';
+            
+            if (isVisible) {
+                fullscreenMode.style.display = 'none';
+                // Sync content back
+                document.getElementById('mainEditor').value = document.getElementById('fullscreenEditor').value;
+                chapters[currentChapter].content = document.getElementById('fullscreenEditor').value;
+                updateWordCount();
+            } else {
+                fullscreenMode.style.display = 'flex';
+                document.getElementById('fullscreenEditor').value = document.getElementById('mainEditor').value;
+                document.getElementById('fullscreenEditor').focus();
+            }
+        }
+        
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        function showProjectSettings() {
+            document.getElementById('projectTitleInput').value = projectTitle;
+            showModal('projectModal');
+        }
+        
+        function updateProjectSettings() {
+            projectTitle = document.getElementById('projectTitleInput').value || "Mein Roman";
+            document.getElementById('projectTitle').textContent = projectTitle;
+            closeModal('projectModal');
+            saveProject();
+        }
+        
+        function saveProject() {
+            // Save current chapter content
+            chapters[currentChapter].content = document.getElementById('mainEditor').value;
+            
+            const projectData = {
+                title: projectTitle,
+                chapters: chapters,
+                characters: characters,
+                notes: notes,
+                currentChapter: currentChapter,
+                lastSaved: new Date().toLocaleString('de-DE')
+            };
+            
+            // In a real application, this would be sent to a server
+            // For demo purposes, we'll use localStorage
+            try {
+                const dataStr = JSON.stringify(projectData);
+                // Simulate cloud save
+                console.log('Projekt gespeichert:', dataStr.length, 'Zeichen');
+                
+                document.getElementById('lastSaved').textContent = projectData.lastSaved;
+                showAutoSaveIndicator();
+            } catch (error) {
+                console.error('Fehler beim Speichern:', error);
+            }
+        }
+        
+        function loadProject() {
+            // In a real application, this would load from a server
+            // For demo purposes, we'll initialize with default data
+            try {
+                updateChapterList();
+                updateCharactersList();
+                updateNotesList();
+                updateTotalStats();
+                document.getElementById('projectTitle').textContent = projectTitle;
+            } catch (error) {
+                console.error('Fehler beim Laden:', error);
+            }
+        }
+        
+        function exportProject() {
+            // Combine all chapters into one document
+            let fullText = `${projectTitle}\n\n`;
+            
+            chapters.forEach((chapter, index) => {
+                fullText += `${chapter.title}\n\n${chapter.content}\n\n---\n\n`;
+            });
+            
+            // Add characters
+            if (characters.length > 0) {
+                fullText += `CHARAKTERE:\n\n`;
+                characters.forEach(char => {
+                    fullText += `${char.name}: ${char.description}\n`;
+                });
+                fullText += `\n---\n\n`;
+            }
+            
+            // Add notes
+            if (notes.length > 0) {
+                fullText += `NOTIZEN:\n\n`;
+                notes.forEach((note, index) => {
+                    fullText += `${index + 1}. ${note}\n`;
+                });
+            }
+            
+            // Create download
+            const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${projectTitle.replace(/[^a-z0-9]/gi, '_')}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function showAutoSaveIndicator() {
+            const indicator = document.getElementById('autoSave');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+        
+        function updateStats() {
+            updateWordCount();
+            updateTotalStats();
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+S for save
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveProject();
+            }
+            
+            // F11 for fullscreen
+            if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+            
+            // Ctrl+N for new chapter
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                addChapter();
+            }
+        });
+        
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+        
+        // Prevent data loss on page unload
+        window.addEventListener('beforeunload', function(e) {
+            saveProject();
+        });
+    </script>
+</body>
+</html>

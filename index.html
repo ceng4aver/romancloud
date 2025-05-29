@@ -1,10 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RomanCloud - Online Roman Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.3/umd/supabase.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -18,6 +18,112 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+        }
+        
+        .auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .auth-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            width: 400px;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        .auth-logo {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .auth-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .auth-input {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .auth-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .auth-btn {
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .auth-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .auth-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .auth-switch {
+            margin-top: 20px;
+            color: #666;
+        }
+        
+        .auth-link {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            color: #f44336;
+            background: rgba(244, 67, 54, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .success-message {
+            color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 15px;
         }
         
         .header {
@@ -41,6 +147,12 @@
             display: flex;
             gap: 15px;
             align-items: center;
+        }
+        
+        .user-info {
+            color: white;
+            font-size: 14px;
+            opacity: 0.9;
         }
         
         .btn {
@@ -68,6 +180,14 @@
             background: #45a049;
         }
         
+        .btn-danger {
+            background: #f44336;
+        }
+        
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+        
         .main-container {
             display: flex;
             flex: 1;
@@ -81,6 +201,25 @@
             border-right: 1px solid rgba(0,0,0,0.1);
             padding: 20px;
             overflow-y: auto;
+        }
+        
+        .project-selector {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+        
+        .project-dropdown {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 10px;
+            background: white;
+            color: #333;
         }
         
         .project-info {
@@ -233,79 +372,37 @@
             color: #4CAF50;
         }
         
-        .fullscreen-btn {
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 1500;
+        }
+        
+        .sync-indicator {
             position: fixed;
             bottom: 30px;
-            right: 30px;
-            background: #4CAF50;
+            left: 30px;
+            background: rgba(76, 175, 80, 0.9);
             color: white;
-            border: none;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 20px;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
-            transition: all 0.3s ease;
-        }
-        
-        .fullscreen-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 25px rgba(76, 175, 80, 0.4);
-        }
-        
-        .fullscreen-mode {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: #1a1a1a;
-            z-index: 1000;
-            display: none;
-            flex-direction: column;
-        }
-        
-        .fullscreen-header {
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .fullscreen-title {
-            color: white;
-            font-size: 18px;
-        }
-        
-        .close-fullscreen {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: none;
             padding: 10px 15px;
-            border-radius: 6px;
-            cursor: pointer;
+            border-radius: 20px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
         
-        .fullscreen-editor {
-            flex: 1;
-            padding: 40px;
-            overflow-y: auto;
+        .sync-indicator.show {
+            opacity: 1;
         }
         
-        .fullscreen-textarea {
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: #e0e0e0;
-            font-size: 18px;
-            line-height: 2;
-            font-family: 'Georgia', serif;
-            resize: none;
-            min-height: calc(100vh - 160px);
+        .sync-indicator.error {
+            background: rgba(244, 67, 54, 0.9);
         }
         
         .modal {
@@ -349,21 +446,8 @@
             justify-content: flex-end;
         }
         
-        .auto-save {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            background: rgba(76, 175, 80, 0.9);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .auto-save.show {
-            opacity: 1;
+        .hidden {
+            display: none !important;
         }
         
         @media (max-width: 768px) {
@@ -393,105 +477,138 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <div class="logo">📚 RomanCloud</div>
-        <div class="header-controls">
-            <button class="btn" onclick="exportProject()">📥 Export</button>
-            <button class="btn" onclick="saveProject()">💾 Speichern</button>
-            <button class="btn btn-primary" onclick="showProjectSettings()">⚙️ Projekt</button>
+    <!-- Authentication Container -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-box">
+            <div class="auth-logo">📚</div>
+            <div class="auth-title">RomanCloud</div>
+            
+            <div id="errorMessage" class="error-message hidden"></div>
+            <div id="successMessage" class="success-message hidden"></div>
+            
+            <div id="loginForm">
+                <div class="auth-form">
+                    <input type="email" id="loginEmail" class="auth-input" placeholder="E-Mail-Adresse" required>
+                    <input type="password" id="loginPassword" class="auth-input" placeholder="Passwort" required>
+                    <button class="auth-btn" onclick="signIn()" id="loginBtn">Anmelden</button>
+                </div>
+                <div class="auth-switch">
+                    Noch kein Account? <span class="auth-link" onclick="showRegister()">Registrieren</span>
+                </div>
+            </div>
+            
+            <div id="registerForm" class="hidden">
+                <div class="auth-form">
+                    <input type="email" id="registerEmail" class="auth-input" placeholder="E-Mail-Adresse" required>
+                    <input type="password" id="registerPassword" class="auth-input" placeholder="Passwort (min. 6 Zeichen)" required>
+                    <input type="password" id="confirmPassword" class="auth-input" placeholder="Passwort bestätigen" required>
+                    <button class="auth-btn" onclick="signUp()" id="registerBtn">Registrieren</button>
+                </div>
+                <div class="auth-switch">
+                    Bereits registriert? <span class="auth-link" onclick="showLogin()">Anmelden</span>
+                </div>
+            </div>
         </div>
     </div>
     
-    <!-- Main Container -->
-    <div class="main-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <!-- Project Info -->
-            <div class="project-info">
-                <div class="project-title" id="projectTitle">Mein Roman</div>
-                <div class="word-count">
-                    <div>📖 <span id="totalWords">0</span> Wörter</div>
-                    <div>📄 <span id="totalChapters">1</span> Kapitel</div>
-                </div>
-            </div>
-            
-            <!-- Chapters -->
-            <div class="chapters-section">
-                <div class="section-title">
-                    Kapitel
-                    <button class="add-btn" onclick="addChapter()">+</button>
-                </div>
-                <ul class="chapter-list" id="chapterList">
-                    <li class="chapter-item active" data-chapter="0" onclick="selectChapter(0)">
-                        <div>
-                            <div>Kapitel 1</div>
-                            <div class="chapter-words">0 Wörter</div>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-            
-            <!-- Characters -->
-            <div class="chapters-section">
-                <div class="section-title">
-                    Charaktere
-                    <button class="add-btn" onclick="addCharacter()">+</button>
-                </div>
-                <div class="characters-list" id="charactersList">
-                    <div class="character-item">
-                        <div class="character-name">Hauptfigur</div>
-                        <div>Noch keine Beschreibung</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Notes -->
-            <div class="chapters-section">
-                <div class="section-title">
-                    Notizen
-                    <button class="add-btn" onclick="addNote()">+</button>
-                </div>
-                <div class="notes-list" id="notesList">
-                    <div class="note-item">Erste Ideen für die Handlung...</div>
-                </div>
+    <!-- Loading Indicator -->
+    <div class="loading" id="loadingIndicator">
+        <div>Lädt...</div>
+    </div>
+    
+    <!-- Main Application -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">📚 RomanCloud</div>
+            <div class="header-controls">
+                <div class="user-info" id="userInfo"></div>
+                <button class="btn" onclick="exportProject()">📥 Export</button>
+                <button class="btn" onclick="showNewProjectModal()">📝 Neues Projekt</button>
+                <button class="btn btn-danger" onclick="signOut()">Abmelden</button>
             </div>
         </div>
         
-        <!-- Editor -->
-        <div class="editor-container">
-            <div class="editor-header">
-                <input type="text" class="chapter-title-input" id="chapterTitleInput" value="Kapitel 1" onchange="updateChapterTitle()">
-                <div class="editor-stats">
-                    <span>🔤 <span id="currentWords">0</span> Wörter</span>
-                    <span>📝 <span id="currentChars">0</span> Zeichen</span>
-                    <span>⏱️ Zuletzt gespeichert: <span id="lastSaved">nie</span></span>
+        <!-- Main Container -->
+        <div class="main-container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Project Selector -->
+                <div class="project-selector">
+                    <div><strong>Aktuelles Projekt:</strong></div>
+                    <select class="project-dropdown" id="projectDropdown" onchange="switchProject()">
+                        <option value="">Projekt auswählen...</option>
+                    </select>
+                </div>
+                
+                <!-- Project Info -->
+                <div class="project-info">
+                    <div class="project-title" id="projectTitle">Kein Projekt ausgewählt</div>
+                    <div class="word-count">
+                        <div>📖 <span id="totalWords">0</span> Wörter</div>
+                        <div>📄 <span id="totalChapters">0</span> Kapitel</div>
+                    </div>
+                </div>
+                
+                <!-- Chapters -->
+                <div class="chapters-section">
+                    <div class="section-title">
+                        Kapitel
+                        <button class="add-btn" onclick="addChapter()">+</button>
+                    </div>
+                    <ul class="chapter-list" id="chapterList"></ul>
+                </div>
+                
+                <!-- Characters -->
+                <div class="chapters-section">
+                    <div class="section-title">
+                        Charaktere
+                        <button class="add-btn" onclick="addCharacter()">+</button>
+                    </div>
+                    <div class="characters-list" id="charactersList"></div>
+                </div>
+                
+                <!-- Notes -->
+                <div class="chapters-section">
+                    <div class="section-title">
+                        Notizen
+                        <button class="add-btn" onclick="addNote()">+</button>
+                    </div>
+                    <div class="notes-list" id="notesList"></div>
                 </div>
             </div>
-            <div class="editor-content">
-                <textarea class="text-editor" id="mainEditor" placeholder="Beginne hier mit deinem Roman...
-
-Es war einmal..."></textarea>
+            
+            <!-- Editor -->
+            <div class="editor-container">
+                <div class="editor-header">
+                    <input type="text" class="chapter-title-input" id="chapterTitleInput" placeholder="Kapitel-Titel" onchange="updateChapterTitle()">
+                    <div class="editor-stats">
+                        <span>🔤 <span id="currentWords">0</span> Wörter</span>
+                        <span>📝 <span id="currentChars">0</span> Zeichen</span>
+                        <span>🔄 <span id="syncStatus">Synchronisiert</span></span>
+                    </div>
+                </div>
+                <div class="editor-content">
+                    <textarea class="text-editor" id="mainEditor" placeholder="Beginne hier mit deinem Roman..."></textarea>
+                </div>
             </div>
         </div>
     </div>
     
-    <!-- Fullscreen Button -->
-    <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Vollbild-Modus">⛶</button>
+    <!-- Sync Indicator -->
+    <div class="sync-indicator" id="syncIndicator">💾 Synchronisiert</div>
     
-    <!-- Fullscreen Mode -->
-    <div class="fullscreen-mode" id="fullscreenMode">
-        <div class="fullscreen-header">
-            <div class="fullscreen-title" id="fullscreenTitle">Kapitel 1</div>
-            <button class="close-fullscreen" onclick="toggleFullscreen()">✕ Schließen</button>
-        </div>
-        <div class="fullscreen-editor">
-            <textarea class="fullscreen-textarea" id="fullscreenEditor" placeholder="Fokussiert schreiben..."></textarea>
+    <!-- New Project Modal -->
+    <div id="newProjectModal" class="modal">
+        <div class="modal-content">
+            <h3>Neues Projekt erstellen</h3>
+            <input type="text" id="newProjectTitle" placeholder="Projekt-Titel">
+            <div class="modal-buttons">
+                <button class="btn" onclick="closeModal('newProjectModal')">Abbrechen</button>
+                <button class="btn btn-primary" onclick="createProject()">Erstellen</button>
+            </div>
         </div>
     </div>
-    
-    <!-- Auto-save Indicator -->
-    <div class="auto-save" id="autoSave">💾 Automatisch gespeichert</div>
     
     <!-- Chapter Modal -->
     <div id="chapterModal" class="modal">
@@ -529,362 +646,213 @@ Es war einmal..."></textarea>
             </div>
         </div>
     </div>
-    
-    <!-- Project Settings Modal -->
-    <div id="projectModal" class="modal">
-        <div class="modal-content">
-            <h3>Projekt-Einstellungen</h3>
-            <input type="text" id="projectTitleInput" placeholder="Projekt-Titel">
-            <div class="modal-buttons">
-                <button class="btn" onclick="closeModal('projectModal')">Abbrechen</button>
-                <button class="btn btn-primary" onclick="updateProjectSettings()">Speichern</button>
-            </div>
-        </div>
-    </div>
 
     <script>
-        // Application State
-        let currentChapter = 0;
-        let chapters = [
-            { title: "Kapitel 1", content: "", words: 0 }
-        ];
-        let characters = [
-            { name: "Hauptfigur", description: "Noch keine Beschreibung" }
-        ];
-        let notes = ["Erste Ideen für die Handlung..."];
-        let projectTitle = "Mein Roman";
-        let autoSaveInterval;
+        // ⚠️ WICHTIG: Ersetze diese Werte mit deinen Supabase-Daten
+        const SUPABASE_URL = 'https://fxwobceezfbusqupcrmn.supabase.co';  // Ersetze mit deiner URL
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4d29iY2VlemZidXNxdXBjcm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1MTk0MTMsImV4cCI6MjA2NDA5NTQxM30.TxuOrWL3tLgbO9fWI98pLap09WbQ3MhF_8WsMoEvxW8';  // Ersetze mit deinem Key
         
-        // Initialize
+        // Supabase Client initialisieren
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Application State
+        let currentUser = null;
+        let currentProject = null;
+        let currentChapter = null;
+        let projects = [];
+        let chapters = [];
+        let characters = [];
+        let notes = [];
+        let autoSaveTimeout;
+        
+        // Initialize Application
         document.addEventListener('DOMContentLoaded', function() {
-            loadProject();
-            setupAutoSave();
+            checkAuthStatus();
             setupEventListeners();
-            updateStats();
         });
         
-        function setupEventListeners() {
-            const mainEditor = document.getElementById('mainEditor');
-            const fullscreenEditor = document.getElementById('fullscreenEditor');
+        // Authentication Functions
+        async function checkAuthStatus() {
+            showLoading(true);
             
-            mainEditor.addEventListener('input', function() {
-                chapters[currentChapter].content = this.value;
-                updateWordCount();
-                showAutoSaveIndicator();
-            });
+            const { data: { user } } = await supabase.auth.getUser();
             
-            fullscreenEditor.addEventListener('input', function() {
-                chapters[currentChapter].content = this.value;
-                document.getElementById('mainEditor').value = this.value;
-                updateWordCount();
-                showAutoSaveIndicator();
-            });
-        }
-        
-        function setupAutoSave() {
-            autoSaveInterval = setInterval(function() {
-                saveProject();
-            }, 30000); // Auto-save every 30 seconds
-        }
-        
-        function updateWordCount() {
-            const content = chapters[currentChapter].content;
-            const words = content.trim() ? content.trim().split(/\s+/).length : 0;
-            const chars = content.length;
-            
-            chapters[currentChapter].words = words;
-            
-            document.getElementById('currentWords').textContent = words;
-            document.getElementById('currentChars').textContent = chars;
-            
-            updateTotalStats();
-            updateChapterList();
-        }
-        
-        function updateTotalStats() {
-            const totalWords = chapters.reduce((sum, chapter) => sum + chapter.words, 0);
-            document.getElementById('totalWords').textContent = totalWords;
-            document.getElementById('totalChapters').textContent = chapters.length;
-        }
-        
-        function updateChapterList() {
-            const chapterList = document.getElementById('chapterList');
-            chapterList.innerHTML = '';
-            
-            chapters.forEach((chapter, index) => {
-                const li = document.createElement('li');
-                li.className = `chapter-item ${index === currentChapter ? 'active' : ''}`;
-                li.setAttribute('data-chapter', index);
-                li.onclick = () => selectChapter(index);
-                li.innerHTML = `
-                    <div>
-                        <div>${chapter.title}</div>
-                        <div class="chapter-words">${chapter.words} Wörter</div>
-                    </div>
-                `;
-                chapterList.appendChild(li);
-            });
-        }
-        
-        function selectChapter(index) {
-            // Save current chapter content
-            chapters[currentChapter].content = document.getElementById('mainEditor').value;
-            
-            // Switch to new chapter
-            currentChapter = index;
-            const chapter = chapters[currentChapter];
-            
-            document.getElementById('mainEditor').value = chapter.content;
-            document.getElementById('chapterTitleInput').value = chapter.title;
-            document.getElementById('fullscreenEditor').value = chapter.content;
-            document.getElementById('fullscreenTitle').textContent = chapter.title;
-            
-            updateWordCount();
-            updateChapterList();
-        }
-        
-        function addChapter() {
-            showModal('chapterModal');
-            document.getElementById('newChapterTitle').value = `Kapitel ${chapters.length + 1}`;
-        }
-        
-        function createChapter() {
-            const title = document.getElementById('newChapterTitle').value || `Kapitel ${chapters.length + 1}`;
-            chapters.push({ title, content: "", words: 0 });
-            updateChapterList();
-            updateTotalStats();
-            closeModal('chapterModal');
-            selectChapter(chapters.length - 1);
-        }
-        
-        function updateChapterTitle() {
-            const newTitle = document.getElementById('chapterTitleInput').value;
-            chapters[currentChapter].title = newTitle;
-            document.getElementById('fullscreenTitle').textContent = newTitle;
-            updateChapterList();
-        }
-        
-        function addCharacter() {
-            showModal('characterModal');
-            document.getElementById('newCharacterName').value = '';
-            document.getElementById('newCharacterDesc').value = '';
-        }
-        
-        function createCharacter() {
-            const name = document.getElementById('newCharacterName').value;
-            const description = document.getElementById('newCharacterDesc').value;
-            
-            if (name) {
-                characters.push({ name, description: description || "Keine Beschreibung" });
-                updateCharactersList();
-                closeModal('characterModal');
-            }
-        }
-        
-        function updateCharactersList() {
-            const charactersList = document.getElementById('charactersList');
-            charactersList.innerHTML = '';
-            
-            characters.forEach(character => {
-                const div = document.createElement('div');
-                div.className = 'character-item';
-                div.innerHTML = `
-                    <div class="character-name">${character.name}</div>
-                    <div>${character.description}</div>
-                `;
-                charactersList.appendChild(div);
-            });
-        }
-        
-        function addNote() {
-            showModal('noteModal');
-            document.getElementById('newNoteContent').value = '';
-        }
-        
-        function createNote() {
-            const content = document.getElementById('newNoteContent').value;
-            if (content) {
-                notes.push(content);
-                updateNotesList();
-                closeModal('noteModal');
-            }
-        }
-        
-        function updateNotesList() {
-            const notesList = document.getElementById('notesList');
-            notesList.innerHTML = '';
-            
-            notes.forEach(note => {
-                const div = document.createElement('div');
-                div.className = 'note-item';
-                div.textContent = note.length > 50 ? note.substring(0, 50) + '...' : note;
-                notesList.appendChild(div);
-            });
-        }
-        
-        function toggleFullscreen() {
-            const fullscreenMode = document.getElementById('fullscreenMode');
-            const isVisible = fullscreenMode.style.display === 'flex';
-            
-            if (isVisible) {
-                fullscreenMode.style.display = 'none';
-                // Sync content back
-                document.getElementById('mainEditor').value = document.getElementById('fullscreenEditor').value;
-                chapters[currentChapter].content = document.getElementById('fullscreenEditor').value;
-                updateWordCount();
+            if (user) {
+                currentUser = user;
+                showMainApp();
+                await loadUserProjects();
             } else {
-                fullscreenMode.style.display = 'flex';
-                document.getElementById('fullscreenEditor').value = document.getElementById('mainEditor').value;
-                document.getElementById('fullscreenEditor').focus();
+                showAuth();
             }
-        }
-        
-        function showModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-        }
-        
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-        
-        function showProjectSettings() {
-            document.getElementById('projectTitleInput').value = projectTitle;
-            showModal('projectModal');
-        }
-        
-        function updateProjectSettings() {
-            projectTitle = document.getElementById('projectTitleInput').value || "Mein Roman";
-            document.getElementById('projectTitle').textContent = projectTitle;
-            closeModal('projectModal');
-            saveProject();
-        }
-        
-        function saveProject() {
-            // Save current chapter content
-            chapters[currentChapter].content = document.getElementById('mainEditor').value;
             
-            const projectData = {
-                title: projectTitle,
-                chapters: chapters,
-                characters: characters,
-                notes: notes,
-                currentChapter: currentChapter,
-                lastSaved: new Date().toLocaleString('de-DE')
-            };
+            showLoading(false);
+        }
+        
+        async function signIn() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
             
-            // In a real application, this would be sent to a server
-            // For demo purposes, we'll use localStorage
-            try {
-                const dataStr = JSON.stringify(projectData);
-                // Simulate cloud save
-                console.log('Projekt gespeichert:', dataStr.length, 'Zeichen');
-                
-                document.getElementById('lastSaved').textContent = projectData.lastSaved;
-                showAutoSaveIndicator();
-            } catch (error) {
-                console.error('Fehler beim Speichern:', error);
+            if (!email || !password) {
+                showError('Bitte E-Mail und Passwort eingeben');
+                return;
             }
-        }
-        
-        function loadProject() {
-            // In a real application, this would load from a server
-            // For demo purposes, we'll initialize with default data
-            try {
-                updateChapterList();
-                updateCharactersList();
-                updateNotesList();
-                updateTotalStats();
-                document.getElementById('projectTitle').textContent = projectTitle;
-            } catch (error) {
-                console.error('Fehler beim Laden:', error);
-            }
-        }
-        
-        function exportProject() {
-            // Combine all chapters into one document
-            let fullText = `${projectTitle}\n\n`;
             
-            chapters.forEach((chapter, index) => {
-                fullText += `${chapter.title}\n\n${chapter.content}\n\n---\n\n`;
+            document.getElementById('loginBtn').disabled = true;
+            
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
             });
             
-            // Add characters
-            if (characters.length > 0) {
-                fullText += `CHARAKTERE:\n\n`;
-                characters.forEach(char => {
-                    fullText += `${char.name}: ${char.description}\n`;
-                });
-                fullText += `\n---\n\n`;
+            if (error) {
+                showError(error.message);
+                document.getElementById('loginBtn').disabled = false;
+            } else {
+                currentUser = data.user;
+                showMainApp();
+                await loadUserProjects();
             }
-            
-            // Add notes
-            if (notes.length > 0) {
-                fullText += `NOTIZEN:\n\n`;
-                notes.forEach((note, index) => {
-                    fullText += `${index + 1}. ${note}\n`;
-                });
-            }
-            
-            // Create download
-            const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${projectTitle.replace(/[^a-z0-9]/gi, '_')}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
         }
         
-        function showAutoSaveIndicator() {
-            const indicator = document.getElementById('autoSave');
-            indicator.classList.add('show');
+        async function signUp() {
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!email || !password || !confirmPassword) {
+                showError('Bitte alle Felder ausfüllen');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showError('Passwörter stimmen nicht überein');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Passwort muss mindestens 6 Zeichen haben');
+                return;
+            }
+            
+            document.getElementById('registerBtn').disabled = true;
+            
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+            });
+            
+            if (error) {
+                showError(error.message);
+                document.getElementById('registerBtn').disabled = false;
+            } else {
+                showSuccess('Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse.');
+                showLogin();
+            }
+        }
+        
+        async function signOut() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            currentProject = null;
+            showAuth();
+        }
+        
+        // UI Functions
+        function showAuth() {
+            document.getElementById('authContainer').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+        }
+        
+        function showMainApp() {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('userInfo').textContent = `👤 ${currentUser.email}`;
+        }
+        
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            clearMessages();
+        }
+        
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            clearMessages();
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            hideSuccess();
+        }
+        
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.classList.remove('hidden');
+            hideError();
+        }
+        
+        function hideError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+        
+        function hideSuccess() {
+            document.getElementById('successMessage').classList.add('hidden');
+        }
+        
+        function clearMessages() {
+            hideError();
+            hideSuccess();
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        }
+        
+        function showSyncIndicator(message, isError = false) {
+            const indicator = document.getElementById('syncIndicator');
+            indicator.textContent = message;
+            indicator.className = `sync-indicator show ${isError ? 'error' : ''}`;
+            
             setTimeout(() => {
                 indicator.classList.remove('show');
-            }, 2000);
+            }, 3000);
         }
         
-        function updateStats() {
-            updateWordCount();
-            updateTotalStats();
-        }
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Ctrl+S for save
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                saveProject();
-            }
-            
-            // F11 for fullscreen
-            if (e.key === 'F11') {
-                e.preventDefault();
-                toggleFullscreen();
-            }
-            
-            // Ctrl+N for new chapter
-            if (e.ctrlKey && e.key === 'n') {
-                e.preventDefault();
-                addChapter();
-            }
-        });
-        
-        // Close modals when clicking outside
-        window.onclick = function(event) {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
+        // Project Functions
+        async function loadUserProjects() {
+            try {
+                const { data, error } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .order('updated_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                projects = data || [];
+                updateProjectDropdown();
+                
+                if (projects.length > 0 && !currentProject) {
+                    await switchToProject(projects[0].id);
                 }
-            });
+            } catch (error) {
+                console.error('Fehler beim Laden der Projekte:', error);
+                showSyncIndicator('Fehler beim Laden der Projekte', true);
+            }
         }
         
-        // Prevent data loss on page unload
-        window.addEventListener('beforeunload', function(e) {
-            saveProject();
-        });
-    </script>
-</body>
-</html>
+        function updateProjectDropdown() {
+            const dropdown = document.getElementById('projectDropdown');
+            dropdown.innerHTML = '<option value="">Projekt auswählen...</option>';
+            
+            projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = project.title;
+                if (currentProject && currentProject.id === project.id) {
+                    option.selected = true;
+                }
+                dropdown

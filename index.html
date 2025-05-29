@@ -664,15 +664,15 @@
     <script>
         // ⚠️ WICHTIG: Ersetze diese Werte mit deinen Supabase-Daten
         // Du bekommst diese Werte von: https://supabase.com/dashboard -> Dein Projekt -> Settings -> API
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';  // z.B. 'https://abc123.supabase.co'
-        const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';  // Dein anon/public Key
+        const SUPABASE_URL = 'https://fxwobceezfbusqupcrmn.supabase.co';  // z.B. 'https://abc123.supabase.co'
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4d29iY2VlemZidXNxdXBjcm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1MTk0MTMsImV4cCI6MjA2NDA5NTQxM30.TxuOrWL3tLgbO9fWI98pLap09WbQ3MhF_8WsMoEvxW8';  // Dein anon/public Key
         
         // Überprüfe ob Supabase konfiguriert ist
         let supabase = null;
         let isConfigured = false;
         
         try {
-            if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
+            if (SUPABASE_URL !== 'https://fxwobceezfbusqupcrmn.supabase.co' && SUPABASE_KEY !== 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4d29iY2VlemZidXNxdXBjcm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1MTk0MTMsImV4cCI6MjA2NDA5NTQxM30.TxuOrWL3tLgbO9fWI98pLap09WbQ3MhF_8WsMoEvxW8') {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 isConfigured = true;
                 document.getElementById('configWarning').style.display = 'none';

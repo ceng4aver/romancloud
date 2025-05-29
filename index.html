@@ -126,6 +126,15 @@
             margin-bottom: 15px;
         }
         
+        .config-warning {
+            background: #ff9800;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
         .header {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -483,6 +492,11 @@
             <div class="auth-logo">📚</div>
             <div class="auth-title">RomanCloud</div>
             
+            <!-- Configuration Warning -->
+            <div id="configWarning" class="config-warning">
+                ⚠️ Supabase noch nicht konfiguriert! Bitte URL und API-Key unten im Code eintragen.
+            </div>
+            
             <div id="errorMessage" class="error-message hidden"></div>
             <div id="successMessage" class="success-message hidden"></div>
             
@@ -649,11 +663,24 @@
 
     <script>
         // ⚠️ WICHTIG: Ersetze diese Werte mit deinen Supabase-Daten
-        const SUPABASE_URL = 'https://fxwobceezfbusqupcrmn.supabase.co';  // Ersetze mit deiner URL
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4d29iY2VlemZidXNxdXBjcm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1MTk0MTMsImV4cCI6MjA2NDA5NTQxM30.TxuOrWL3tLgbO9fWI98pLap09WbQ3MhF_8WsMoEvxW8';  // Ersetze mit deinem Key
+        // Du bekommst diese Werte von: https://supabase.com/dashboard -> Dein Projekt -> Settings -> API
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';  // z.B. 'https://abc123.supabase.co'
+        const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';  // Dein anon/public Key
         
-        // Supabase Client initialisieren
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Überprüfe ob Supabase konfiguriert ist
+        let supabase = null;
+        let isConfigured = false;
+        
+        try {
+            if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                isConfigured = true;
+                document.getElementById('configWarning').style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Supabase Konfigurationsfehler:', error);
+            showError('Supabase Konfigurationsfehler: ' + error.message);
+        }
         
         // Application State
         let currentUser = null;
@@ -667,29 +694,75 @@
         
         // Initialize Application
         document.addEventListener('DOMContentLoaded', function() {
+            if (!isConfigured) {
+                showError('Bitte konfiguriere zuerst deine Supabase-Verbindung im Code!');
+                return;
+            }
             checkAuthStatus();
             setupEventListeners();
         });
         
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Enter key for forms
+            document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') signIn();
+            });
+            
+            document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') signUp();
+            });
+            
+            // Editor auto-save
+            const editor = document.getElementById('mainEditor');
+            if (editor) {
+                editor.addEventListener('input', function() {
+                    updateWordCount();
+                    scheduleAutoSave();
+                });
+            }
+            
+            // Modal close on outside click
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
         // Authentication Functions
         async function checkAuthStatus() {
+            if (!isConfigured) return;
+            
             showLoading(true);
             
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            if (user) {
-                currentUser = user;
-                showMainApp();
-                await loadUserProjects();
-            } else {
-                showAuth();
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (user) {
+                    currentUser = user;
+                    showMainApp();
+                    await loadUserProjects();
+                } else {
+                    showAuth();
+                }
+            } catch (error) {
+                console.error('Auth Status Error:', error);
+                showError('Verbindungsfehler: ' + error.message);
             }
             
             showLoading(false);
         }
         
         async function signIn() {
-            const email = document.getElementById('loginEmail').value;
+            if (!isConfigured) {
+                showError('Supabase ist noch nicht konfiguriert!');
+                return;
+            }
+            
+            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             
             if (!email || !password) {
@@ -698,24 +771,36 @@
             }
             
             document.getElementById('loginBtn').disabled = true;
+            document.getElementById('loginBtn').textContent = 'Wird angemeldet...';
             
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password,
-            });
-            
-            if (error) {
-                showError(error.message);
-                document.getElementById('loginBtn').disabled = false;
-            } else {
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+                
+                if (error) throw error;
+                
                 currentUser = data.user;
                 showMainApp();
                 await loadUserProjects();
+                
+            } catch (error) {
+                console.error('Sign In Error:', error);
+                showError('Anmeldung fehlgeschlagen: ' + error.message);
+            } finally {
+                document.getElementById('loginBtn').disabled = false;
+                document.getElementById('loginBtn').textContent = 'Anmelden';
             }
         }
         
         async function signUp() {
-            const email = document.getElementById('registerEmail').value;
+            if (!isConfigured) {
+                showError('Supabase ist noch nicht konfiguriert!');
+                return;
+            }
+            
+            const email = document.getElementById('registerEmail').value.trim();
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             
@@ -735,26 +820,45 @@
             }
             
             document.getElementById('registerBtn').disabled = true;
+            document.getElementById('registerBtn').textContent = 'Wird registriert...';
             
-            const { data, error } = await supabase.auth.signUp({
-                email: email,
-                password: password,
-            });
-            
-            if (error) {
-                showError(error.message);
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                });
+                
+                if (error) throw error;
+                
+                if (data.user && !data.user.email_confirmed_at) {
+                    showSuccess('Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse.');
+                    showLogin();
+                } else {
+                    currentUser = data.user;
+                    showMainApp();
+                    await loadUserProjects();
+                }
+                
+            } catch (error) {
+                console.error('Sign Up Error:', error);
+                showError('Registrierung fehlgeschlagen: ' + error.message);
+            } finally {
                 document.getElementById('registerBtn').disabled = false;
-            } else {
-                showSuccess('Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse.');
-                showLogin();
+                document.getElementById('registerBtn').textContent = 'Registrieren';
             }
         }
         
         async function signOut() {
-            await supabase.auth.signOut();
-            currentUser = null;
-            currentProject = null;
-            showAuth();
+            if (!isConfigured) return;
+            
+            try {
+                await supabase.auth.signOut();
+                currentUser = null;
+                currentProject = null;
+                showAuth();
+            } catch (error) {
+                console.error('Sign Out Error:', error);
+            }
         }
         
         // UI Functions
@@ -783,76 +887,3 @@
         
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.classList.remove('hidden');
-            hideSuccess();
-        }
-        
-        function showSuccess(message) {
-            const successDiv = document.getElementById('successMessage');
-            successDiv.textContent = message;
-            successDiv.classList.remove('hidden');
-            hideError();
-        }
-        
-        function hideError() {
-            document.getElementById('errorMessage').classList.add('hidden');
-        }
-        
-        function hideSuccess() {
-            document.getElementById('successMessage').classList.add('hidden');
-        }
-        
-        function clearMessages() {
-            hideError();
-            hideSuccess();
-        }
-        
-        function showLoading(show) {
-            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
-        }
-        
-        function showSyncIndicator(message, isError = false) {
-            const indicator = document.getElementById('syncIndicator');
-            indicator.textContent = message;
-            indicator.className = `sync-indicator show ${isError ? 'error' : ''}`;
-            
-            setTimeout(() => {
-                indicator.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Project Functions
-        async function loadUserProjects() {
-            try {
-                const { data, error } = await supabase
-                    .from('projects')
-                    .select('*')
-                    .order('updated_at', { ascending: false });
-                
-                if (error) throw error;
-                
-                projects = data || [];
-                updateProjectDropdown();
-                
-                if (projects.length > 0 && !currentProject) {
-                    await switchToProject(projects[0].id);
-                }
-            } catch (error) {
-                console.error('Fehler beim Laden der Projekte:', error);
-                showSyncIndicator('Fehler beim Laden der Projekte', true);
-            }
-        }
-        
-        function updateProjectDropdown() {
-            const dropdown = document.getElementById('projectDropdown');
-            dropdown.innerHTML = '<option value="">Projekt auswählen...</option>';
-            
-            projects.forEach(project => {
-                const option = document.createElement('option');
-                option.value = project.id;
-                option.textContent = project.title;
-                if (currentProject && currentProject.id === project.id) {
-                    option.selected = true;
-                }
-                dropdown

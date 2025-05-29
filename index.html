@@ -483,6 +483,24 @@
                 font-size: 12px;
             }
         }
+            .hint-circle {
+                position: fixed;
+                top: 15px;
+                right: 15px;
+                width: 30px;
+                height: 30px;
+                background-color: red;
+                color: white;
+                border-radius: 50%;
+                text-align: center;
+                line-height: 30px;
+                font-weight: bold;
+                font-size: 18px;
+                z-index: 3000;
+                cursor: help;
+                box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
     </style>
 </head>
 <body>
@@ -534,6 +552,7 @@
     <div id="mainApp" class="hidden">
         <!-- Header -->
         <div class="header">
+            <div class="hint-circle" title="Willkommen! Hier findest du nützliche Hinweise.">❗</div>
             <div class="logo">📚 RomanCloud</div>
             <div class="header-controls">
                 <div class="user-info" id="userInfo"></div>

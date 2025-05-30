@@ -504,9 +504,9 @@
     <div class="auth-container" id="authContainer">
         <div class="auth-box">
             <div class="auth-logo">📚</div>
-            <div class="auth-title">Roman--Cloud</div>
+            <div class="auth-title">RomanCloud</div>
             
-            <!-- Configuration Warning (wird ausgeblendet wenn konfiguriert) -->
+            <!-- Configuration Warning -->
             <div id="configWarning" class="config-warning hidden">
                 ⚠️ Supabase noch nicht konfiguriert! Bitte URL und API-Key unten im Code eintragen.
             </div>
@@ -545,7 +545,7 @@
     </div>
     
     <!-- Main Application -->
-    <div class="version-hint">Hinweis: online 2.22</div>
+    <div class="version-hint">Version: online 44.0 Fixed</div>
     <div id="mainApp" class="hidden">
         <!-- Header -->
         <div class="header">
@@ -614,7 +614,7 @@
                     <div class="editor-stats">
                         <span>🔤 <span id="currentWords">0</span> Wörter</span>
                         <span>📝 <span id="currentChars">0</span> Zeichen</span>
-                        <span>🔄 <span id="syncStatus">Synchronisiert</span></span>
+                        <span>🔄 <span id="syncStatus">Offline-Modus</span></span>
                     </div>
                 </div>
                 <div class="editor-content">
@@ -625,7 +625,7 @@
     </div>
     
     <!-- Sync Indicator -->
-    <div class="sync-indicator" id="syncIndicator">💾 Synchronisiert</div>
+    <div class="sync-indicator" id="syncIndicator">💾 Im Speicher gespeichert</div>
     
     <!-- New Project Modal -->
     <div id="newProjectModal" class="modal">
@@ -677,29 +677,13 @@
     </div>
 
     <script>
-        // Supabase Konfiguration - Diese Werte sind bereits konfiguriert
+        // Configuration
         const SUPABASE_URL = 'https://fxwobceezfbusqupcrmn.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4d29iY2VlemZidXNxdXBjcm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1MTk0MTMsImV4cCI6MjA2NDA5NTQxM30.TxuOrWL3tLgbO9fWI98pLap09WbQ3MhF_8WsMoEvxW8';
         
-        // Supabase Client initialisieren
+        // Initialize
         let supabase = null;
         let isConfigured = false;
-        
-        try {
-            // Überprüfe ob Supabase verfügbar ist
-            if (window.supabase && SUPABASE_URL && SUPABASE_KEY) {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                isConfigured = true;
-                console.log('Supabase erfolgreich konfiguriert');
-            } else {
-                throw new Error('Supabase oder Konfiguration nicht verfügbar');
-            }
-        } catch (error) {
-            console.error('Supabase Konfigurationsfehler:', error);
-            isConfigured = false;
-        }
-        
-        // Application State
         let currentUser = null;
         let currentProject = null;
         let currentChapter = null;
@@ -709,81 +693,50 @@
         let notes = [];
         let autoSaveTimeout;
         
-        // Initialize Application
+        // Try to initialize Supabase
+        try {
+            if (window.supabase && SUPABASE_URL && SUPABASE_KEY) {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                isConfigured = true;
+                console.log('Supabase konfiguriert');
+            }
+        } catch (error) {
+            console.error('Supabase Fehler:', error);
+            isConfigured = false;
+        }
+        
+        // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             if (!isConfigured) {
-                document.getElementById('configWarning').classList.remove('hidden');
-                showError('Fehler bei der Supabase-Konfiguration. Bitte überprüfen Sie die Einstellungen.');
-                return;
+                // Run in offline mode
+                showMainApp();
+                initOfflineMode();
+            } else {
+                checkAuthStatus();
             }
-            
-            checkAuthStatus();
             setupEventListeners();
         });
         
-        // Setup Event Listeners
-        function setupEventListeners() {
-            // Enter key for forms
-            const loginPassword = document.getElementById('loginPassword');
-            if (loginPassword) {
-                loginPassword.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') signIn();
-                });
-            }
-            
-            const confirmPassword = document.getElementById('confirmPassword');
-            if (confirmPassword) {
-                confirmPassword.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') signUp();
-                });
-            }
-            
-            // Editor auto-save
-            const editor = document.getElementById('mainEditor');
-            if (editor) {
-                editor.addEventListener('input', function() {
-                    updateWordCount();
-                    scheduleAutoSave();
-                });
-            }
-            
-            // Modal close on outside click
-            document.querySelectorAll('.modal').forEach(modal => {
-                modal.addEventListener('click', function(e) {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
-                    }
-                });
-            });
+        // Authentication Functions
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            hideMessage();
         }
         
-        // Authentication Functions
-        async function checkAuthStatus() {
-            if (!isConfigured) return;
-            
-            showLoading(true);
-            
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                
-                if (user) {
-                    currentUser = user;
-                    showMainApp();
-                    await loadUserProjects();
-                } else {
-                    showAuth();
-                }
-            } catch (error) {
-                console.error('Auth Status Error:', error);
-                showError('Verbindungsfehler: ' + error.message);
-            }
-            
-            showLoading(false);
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            hideMessage();
         }
         
         async function signIn() {
             if (!isConfigured) {
-                showError('Supabase ist noch nicht konfiguriert!');
+                showError('Offline-Modus - direkt zur Anwendung');
+                setTimeout(() => {
+                    showMainApp();
+                    initOfflineMode();
+                }, 1000);
                 return;
             }
             
@@ -812,7 +765,7 @@
                 await loadUserProjects();
                 
             } catch (error) {
-                console.error('Sign In Error:', error);
+                console.error('Anmeldungsfehler:', error);
                 showError('Anmeldung fehlgeschlagen: ' + error.message);
             } finally {
                 loginBtn.disabled = false;
@@ -822,7 +775,11 @@
         
         async function signUp() {
             if (!isConfigured) {
-                showError('Supabase ist noch nicht konfiguriert!');
+                showError('Offline-Modus - direkt zur Anwendung');
+                setTimeout(() => {
+                    showMainApp();
+                    initOfflineMode();
+                }, 1000);
                 return;
             }
             
@@ -857,17 +814,11 @@
                 
                 if (error) throw error;
                 
-                if (data.user && !data.user.email_confirmed_at) {
-                    showSuccess('Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse.');
-                    showLogin();
-                } else {
-                    currentUser = data.user;
-                    showMainApp();
-                    await loadUserProjects();
-                }
+                showSuccess('Registrierung erfolgreich! Bitte bestätige deine E-Mail.');
+                showLogin();
                 
             } catch (error) {
-                console.error('Sign Up Error:', error);
+                console.error('Registrierungsfehler:', error);
                 showError('Registrierung fehlgeschlagen: ' + error.message);
             } finally {
                 registerBtn.disabled = false;
@@ -876,20 +827,57 @@
         }
         
         async function signOut() {
-            try {
-                await supabase.auth.signOut();
-                currentUser = null;
-                currentProject = null;
-                currentChapter = null;
-                projects = [];
-                chapters = [];
-                characters = [];
-                notes = [];
-                showAuth();
-            } catch (error) {
-                console.error('Sign Out Error:', error);
-                showError('Abmeldung fehlgeschlagen: ' + error.message);
+            if (isConfigured && supabase) {
+                try {
+                    await supabase.auth.signOut();
+                } catch (error) {
+                    console.error('Abmeldungsfehler:', error);
+                }
             }
+            
+            // Reset state
+            currentUser = null;
+            currentProject = null;
+            currentChapter = null;
+            projects = [];
+            chapters = [];
+            characters = [];
+            notes = [];
+            
+            // Clear UI
+            document.getElementById('projectDropdown').innerHTML = '<option value="">Projekt auswählen...</option>';
+            document.getElementById('chapterList').innerHTML = '';
+            document.getElementById('charactersList').innerHTML = '';
+            document.getElementById('notesList').innerHTML = '';
+            document.getElementById('mainEditor').value = '';
+            document.getElementById('chapterTitleInput').value = '';
+            
+            showAuth();
+        }
+        
+        async function checkAuthStatus() {
+            showLoading(true);
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (user) {
+                    currentUser = user;
+                    showMainApp();
+                    await loadUserProjects();
+                } else {
+                    showAuth();
+                }
+            } catch (error) {
+                console.error('Auth Status Fehler:', error);
+                showError('Verbindungsfehler - starte Offline-Modus');
+                setTimeout(() => {
+                    showMainApp();
+                    initOfflineMode();
+                }, 2000);
+            }
+            
+            showLoading(false);
         }
         
         // UI Functions
@@ -900,4 +888,19 @@
         
         function showMainApp() {
             document.getElementById('authContainer').classList.add('hidden');
-            document.getElementByI
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            if (currentUser) {
+                document.getElementById('userInfo').textContent = currentUser.email || 'Benutzer';
+            } else {
+                document.getElementById('userInfo').textContent = 'Offline-Modus';
+                document.getElementById('syncStatus').textContent = 'Offline-Modus';
+            }
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+        }
+        
+        function showError(message) {
+            const errorEl

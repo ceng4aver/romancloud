@@ -483,23 +483,20 @@
                 font-size: 12px;
             }
         }
-            .hint-circle {
-                position: fixed;
-                top: 15px;
-                left: 15px;
-                width: 30px;
-                height: 30px;
-                background-color: red;
-                color: white;
-                border-radius: 50%;
-                text-align: center;
-                line-height: 30px;
-                font-weight: bold;
-                font-size: 18px;
-                z-index: 3000;
-                cursor: help;
-                box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        }
+			.version-hint {
+				position: fixed;
+				top: 15px;
+				left: 15px;
+				background-color: rgba(255, 255, 255, 0.8);
+				color: #333;
+				padding: 8px 14px;
+				border-radius: 8px;
+				font-size: 14px;
+				font-weight: bold;
+				box-shadow: 0 0 5px rgba(0,0,0,0.1);
+				z-index: 3000;
+		}
+
 
     </style>
 </head>
@@ -548,8 +545,8 @@
         <div>Lädt...</div>
     
     </div>
-  <div class="hint-circle" title="Ver-2">❗</div>
-    <!-- Main Application -->
+      <!-- Main Application -->
+	<div class="version-hint">Hinweis: cor mainapp V 3.2</div>
     <div id="mainApp" class="hidden">
         <!-- Header -->
         <div class="header">

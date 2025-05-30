@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -484,21 +483,20 @@
                 font-size: 12px;
             }
         }
-			.version-hint {
-				position: fixed;
-				top: 15px;
-				left: 15px;
-				background-color: rgba(255, 255, 255, 0.8);
-				color: #333;
-				padding: 8px 14px;
-				border-radius: 8px;
-				font-size: 14px;
-				font-weight: bold;
-				box-shadow: 0 0 5px rgba(0,0,0,0.1);
-				z-index: 3000;
-		}
 
-
+        .version-hint {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #333;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            z-index: 3000;
+        }
     </style>
 </head>
 <body>
@@ -508,8 +506,8 @@
             <div class="auth-logo">📚</div>
             <div class="auth-title">Roman--Cloud</div>
             
-            <!-- Configuration Warning -->
-            <div id="configWarning" class="config-warning">
+            <!-- Configuration Warning (wird ausgeblendet wenn konfiguriert) -->
+            <div id="configWarning" class="config-warning hidden">
                 ⚠️ Supabase noch nicht konfiguriert! Bitte URL und API-Key unten im Code eintragen.
             </div>
             
@@ -544,15 +542,14 @@
     <!-- Loading Indicator -->
     <div class="loading" id="loadingIndicator">
         <div>Lädt...</div>
-    
     </div>
-      <!-- Main Application -->
-	<div class="version-hint">Hinweis: Online V3.2</div>
+    
+    <!-- Main Application -->
+    <div class="version-hint">Hinweis: online 2.0</div>
     <div id="mainApp" class="hidden">
         <!-- Header -->
         <div class="header">
-			<div class="hint-circle" title="Ver 1">❗</div>
-            <div class="logo">📚 RomdddddanCloud</div>
+            <div class="logo">📚 RomanCloud</div>
             <div class="header-controls">
                 <div class="user-info" id="userInfo"></div>
                 <button class="btn" onclick="exportProject()">📥 Export</button>
@@ -680,24 +677,26 @@
     </div>
 
     <script>
-        // ⚠️ WICHTIG: Ersetze diese Werte mit deinen Supabase-Daten
-        // Du bekommst diese Werte von: https://supabase.com/dashboard -> Dein Projekt -> Settings -> API
-        const SUPABASE_URL = 'https://fxwobceezfbusqupcrmn.supabase.co';  // z.B. 'https://abc123.supabase.co'
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4d29iY2VlemZidXNxdXBjcm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1MTk0MTMsImV4cCI6MjA2NDA5NTQxM30.TxuOrWL3tLgbO9fWI98pLap09WbQ3MhF_8WsMoEvxW8';  // Dein anon/public Key
+        // Supabase Konfiguration - Diese Werte sind bereits konfiguriert
+        const SUPABASE_URL = 'https://fxwobceezfbusqupcrmn.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4d29iY2VlemZidXNxdXBjcm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1MTk0MTMsImV4cCI6MjA2NDA5NTQxM30.TxuOrWL3tLgbO9fWI98pLap09WbQ3MhF_8WsMoEvxW8';
         
-        // Überprüfe ob Supabase konfiguriert ist
+        // Supabase Client initialisieren
         let supabase = null;
         let isConfigured = false;
         
         try {
-            if (SUPABASE_URL !== 'https://fxwobceezfbusqupcrmn.supabase.co' && SUPABASE_KEY !== 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4d29iY2VlemZidXNxdXBjcm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1MTk0MTMsImV4cCI6MjA2NDA5NTQxM30.TxuOrWL3tLgbO9fWI98pLap09WbQ3MhF_8WsMoEvxW8') {
+            // Überprüfe ob Supabase verfügbar ist
+            if (window.supabase && SUPABASE_URL && SUPABASE_KEY) {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 isConfigured = true;
-                document.getElementById('configWarning').style.display = 'none';
+                console.log('Supabase erfolgreich konfiguriert');
+            } else {
+                throw new Error('Supabase oder Konfiguration nicht verfügbar');
             }
         } catch (error) {
             console.error('Supabase Konfigurationsfehler:', error);
-            showError('Supabase Konfigurationsfehler: ' + error.message);
+            isConfigured = false;
         }
         
         // Application State
@@ -713,9 +712,11 @@
         // Initialize Application
         document.addEventListener('DOMContentLoaded', function() {
             if (!isConfigured) {
-                showError('Bitte konfiguriere zuerst deine Supabase-Verbindung im Code!');
+                document.getElementById('configWarning').classList.remove('hidden');
+                showError('Fehler bei der Supabase-Konfiguration. Bitte überprüfen Sie die Einstellungen.');
                 return;
             }
+            
             checkAuthStatus();
             setupEventListeners();
         });
@@ -723,13 +724,19 @@
         // Setup Event Listeners
         function setupEventListeners() {
             // Enter key for forms
-            document.getElementById('loginPassword').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') signIn();
-            });
+            const loginPassword = document.getElementById('loginPassword');
+            if (loginPassword) {
+                loginPassword.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') signIn();
+                });
+            }
             
-            document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') signUp();
-            });
+            const confirmPassword = document.getElementById('confirmPassword');
+            if (confirmPassword) {
+                confirmPassword.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') signUp();
+                });
+            }
             
             // Editor auto-save
             const editor = document.getElementById('mainEditor');
@@ -788,8 +795,9 @@
                 return;
             }
             
-            document.getElementById('loginBtn').disabled = true;
-            document.getElementById('loginBtn').textContent = 'Wird angemeldet...';
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Wird angemeldet...';
             
             try {
                 const { data, error } = await supabase.auth.signInWithPassword({
@@ -807,8 +815,8 @@
                 console.error('Sign In Error:', error);
                 showError('Anmeldung fehlgeschlagen: ' + error.message);
             } finally {
-                document.getElementById('loginBtn').disabled = false;
-                document.getElementById('loginBtn').textContent = 'Anmelden';
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Anmelden';
             }
         }
         
@@ -837,8 +845,9 @@
                 return;
             }
             
-            document.getElementById('registerBtn').disabled = true;
-            document.getElementById('registerBtn').textContent = 'Wird registriert...';
+            const registerBtn = document.getElementById('registerBtn');
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Wird registriert...';
             
             try {
                 const { data, error } = await supabase.auth.signUp({
@@ -854,54 +863,3 @@
                 } else {
                     currentUser = data.user;
                     showMainApp();
-                    await loadUserProjects();
-                }
-                
-            } catch (error) {
-                console.error('Sign Up Error:', error);
-                showError('Registrierung fehlgeschlagen: ' + error.message);
-            } finally {
-                document.getElementById('registerBtn').disabled = false;
-                document.getElementById('registerBtn').textContent = 'Registrieren';
-            }
-        }
-        
-        async function signOut() {
-            if (!isConfigured) return;
-            
-            try {
-                await supabase.auth.signOut();
-                currentUser = null;
-                currentProject = null;
-                showAuth();
-            } catch (error) {
-                console.error('Sign Out Error:', error);
-            }
-        }
-        
-        // UI Functions
-        function showAuth() {
-            document.getElementById('authContainer').classList.remove('hidden');
-            document.getElementById('mainApp').classList.add('hidden');
-        }
-        
-        function showMainApp() {
-            document.getElementById('authContainer').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
-            document.getElementById('userInfo').textContent = `👤 ${currentUser.email}`;
-        }
-        
-        function showLogin() {
-            document.getElementById('loginForm').classList.remove('hidden');
-            document.getElementById('registerForm').classList.add('hidden');
-            clearMessages();
-        }
-        
-        function showRegister() {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('registerForm').classList.remove('hidden');
-            clearMessages();
-        }
-        
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');

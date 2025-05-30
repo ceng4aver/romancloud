@@ -545,7 +545,7 @@
     </div>
     
     <!-- Main Application -->
-    <div class="version-hint">Hinweis: online 2.0</div>
+    <div class="version-hint">Hinweis: online 2.22</div>
     <div id="mainApp" class="hidden">
         <!-- Header -->
         <div class="header">
@@ -863,3 +863,41 @@
                 } else {
                     currentUser = data.user;
                     showMainApp();
+                    await loadUserProjects();
+                }
+                
+            } catch (error) {
+                console.error('Sign Up Error:', error);
+                showError('Registrierung fehlgeschlagen: ' + error.message);
+            } finally {
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Registrieren';
+            }
+        }
+        
+        async function signOut() {
+            try {
+                await supabase.auth.signOut();
+                currentUser = null;
+                currentProject = null;
+                currentChapter = null;
+                projects = [];
+                chapters = [];
+                characters = [];
+                notes = [];
+                showAuth();
+            } catch (error) {
+                console.error('Sign Out Error:', error);
+                showError('Abmeldung fehlgeschlagen: ' + error.message);
+            }
+        }
+        
+        // UI Functions
+        function showAuth() {
+            document.getElementById('authContainer').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+        }
+        
+        function showMainApp() {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementByI

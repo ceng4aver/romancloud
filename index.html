@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RomanCloud - Online Roman Editor</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.3/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -545,7 +545,7 @@
     </div>
     
     <!-- Main Application -->
-    <div class="version-hint">Version: 2-4.1 On</div>
+    <div class="version-hint">Version: 2-5.1 Online</div>
     <div id="mainApp" class="hidden">
         <!-- Header -->
         <div class="header">
@@ -614,7 +614,7 @@
                     <div class="editor-stats">
                         <span>🔤 <span id="currentWords">0</span> Wörter</span>
                         <span>📝 <span id="currentChars">0</span> Zeichen</span>
-                        <span>🔄 <span id="syncStatus">Offline-Modus</span></span>
+                        <span>🔄 <span id="syncStatus">Bereit</span></span>
                     </div>
                 </div>
                 <div class="editor-content">
@@ -625,7 +625,7 @@
     </div>
     
     <!-- Sync Indicator -->
-    <div class="sync-indicator" id="syncIndicator">💾 Im Speicher gespeichert</div>
+    <div class="sync-indicator" id="syncIndicator">💾 Gespeichert</div>
     
     <!-- New Project Modal -->
     <div id="newProjectModal" class="modal">
@@ -707,12 +707,12 @@
             if (window.supabase && SUPABASE_URL && SUPABASE_KEY) {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 isConfigured = true;
-                console.log('Supabase konfiguriert');
+                console.log('Supabase erfolgreich konfiguriert');
             } else {
                 console.log('Supabase nicht verfügbar - starte Offline-Modus');
             }
         } catch (error) {
-            console.error('Supabase Fehler:', error);
+            console.error('Supabase Initialisierungsfehler:', error);
             isConfigured = false;
         }
         
@@ -727,6 +727,54 @@
             }
             setupEventListeners();
         });
+        
+        // Offline Mode Functions
+        function initOfflineMode() {
+            console.log('Offline-Modus gestartet');
+            document.getElementById('userInfo').textContent = 'Offline-Modus';
+            document.getElementById('syncStatus').textContent = 'Offline';
+            loadOfflineData();
+            showSyncStatus('Offline-Modus aktiv', false);
+        }
+        
+        function loadOfflineData() {
+            try {
+                projects = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROJECTS)) || [];
+                chapters = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHAPTERS)) || [];
+                characters = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHARACTERS)) || [];
+                notes = JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTES)) || [];
+                
+                const currentProjectId = localStorage.getItem(STORAGE_KEYS.CURRENT_PROJECT);
+                if (currentProjectId) {
+                    currentProject = projects.find(p => p.id === currentProjectId);
+                }
+                
+                updateProjectDropdown();
+                if (currentProject) {
+                    loadProject(currentProject.id);
+                }
+            } catch (error) {
+                console.error('Fehler beim Laden der Offline-Daten:', error);
+            }
+        }
+        
+        function saveOfflineData() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+                localStorage.setItem(STORAGE_KEYS.CHAPTERS, JSON.stringify(chapters));
+                localStorage.setItem(STORAGE_KEYS.CHARACTERS, JSON.stringify(characters));
+                localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
+                
+                if (currentProject) {
+                    localStorage.setItem(STORAGE_KEYS.CURRENT_PROJECT, currentProject.id);
+                }
+                
+                showSyncStatus('Lokal gespeichert', false);
+            } catch (error) {
+                console.error('Fehler beim Speichern der Offline-Daten:', error);
+                showSyncStatus('Speicherfehler', true);
+            }
+        }
         
         // Authentication Functions
         function showLogin() {
@@ -813,85 +861,4 @@
                 return;
             }
             
-            const registerBtn = document.getElementById('registerBtn');
-            registerBtn.disabled = true;
-            registerBtn.textContent = 'Wird registriert...';
-            
-            try {
-                const { data, error } = await supabase.auth.signUp({
-                    email: email,
-                    password: password,
-                });
-                
-                if (error) throw error;
-                
-                showSuccess('Registrierung erfolgreich! Bitte bestätige deine E-Mail.');
-                showLogin();
-                
-            } catch (error) {
-                console.error('Registrierungsfehler:', error);
-                showError('Registrierung fehlgeschlagen: ' + error.message);
-            } finally {
-                registerBtn.disabled = false;
-                registerBtn.textContent = 'Registrieren';
-            }
-        }
-        
-        async function signOut() {
-            if (isConfigured && supabase) {
-                try {
-                    await supabase.auth.signOut();
-                } catch (error) {
-                    console.error('Abmeldungsfehler:', error);
-                }
-            }
-            
-            // Reset state
-            currentUser = null;
-            currentProject = null;
-            currentChapter = null;
-            projects = [];
-            chapters = [];
-            characters = [];
-            notes = [];
-            
-            // Clear UI
-            document.getElementById('projectDropdown').innerHTML = '<option value="">Projekt auswählen...</option>';
-            document.getElementById('chapterList').innerHTML = '';
-            document.getElementById('charactersList').innerHTML = '';
-            document.getElementById('notesList').innerHTML = '';
-            document.getElementById('mainEditor').value = '';
-            document.getElementById('chapterTitleInput').value = '';
-            
-            showAuth();
-        }
-        
-        async function checkAuthStatus() {
-            showLoading(true);
-            
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                
-                if (user) {
-                    currentUser = user;
-                    showMainApp();
-                    await loadUserProjects();
-                } else {
-                    showAuth();
-                }
-            } catch (error) {
-                console.error('Auth Status Fehler:', error);
-                showError('Verbindungsfehler - starte Offline-Modus');
-                setTimeout(() => {
-                    showMainApp();
-                    initOfflineMode();
-                }, 2000);
-            }
-            
-            showLoading(false);
-        }
-        
-        // UI Functions
-        function showAuth() {
-            document.getElementById('authContainer').classList.remove('hidden');
-            document.getElementById('mainApp
+            const registerBtn = document.getElementById('

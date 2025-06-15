@@ -545,7 +545,7 @@
     </div>
     
     <!-- Main Application -->
-    <div class="version-hint">Version: online 44.0 Fixed</div>
+    <div class="version-hint">Version: 2-4 Online</div>
     <div id="mainApp" class="hidden">
         <!-- Header -->
         <div class="header">
@@ -693,12 +693,23 @@
         let notes = [];
         let autoSaveTimeout;
         
+        // Local storage keys
+        const STORAGE_KEYS = {
+            PROJECTS: 'romancloud_projects',
+            CURRENT_PROJECT: 'romancloud_current_project',
+            CHAPTERS: 'romancloud_chapters',
+            CHARACTERS: 'romancloud_characters',
+            NOTES: 'romancloud_notes'
+        };
+        
         // Try to initialize Supabase
         try {
             if (window.supabase && SUPABASE_URL && SUPABASE_KEY) {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 isConfigured = true;
                 console.log('Supabase konfiguriert');
+            } else {
+                console.log('Supabase nicht verfügbar - starte Offline-Modus');
             }
         } catch (error) {
             console.error('Supabase Fehler:', error);
@@ -883,24 +894,4 @@
         // UI Functions
         function showAuth() {
             document.getElementById('authContainer').classList.remove('hidden');
-            document.getElementById('mainApp').classList.add('hidden');
-        }
-        
-        function showMainApp() {
-            document.getElementById('authContainer').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
-            
-            if (currentUser) {
-                document.getElementById('userInfo').textContent = currentUser.email || 'Benutzer';
-            } else {
-                document.getElementById('userInfo').textContent = 'Offline-Modus';
-                document.getElementById('syncStatus').textContent = 'Offline-Modus';
-            }
-        }
-        
-        function showLoading(show) {
-            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
-        }
-        
-        function showError(message) {
-            const errorEl
+            document.getElementById('mainApp
